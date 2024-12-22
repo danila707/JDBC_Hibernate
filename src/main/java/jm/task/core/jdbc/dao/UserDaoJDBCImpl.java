@@ -6,24 +6,21 @@ import jm.task.core.jdbc.util.Util;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class UserDaoJDBCImpl implements UserDao {
-    private final Connection connection;
-    public UserDaoJDBCImpl() {
-        this.connection = Util.getConnection();
-    }
-
+    private final Logger log = Logger.getLogger(UserDaoJDBCImpl.class.getName());
+    private final Connection connection = Util.getConnection();
     @Override
     public void createUsersTable() {
-        if(connection == null) {
-            //
-            System.out.println("нет соединения");
+        if (connection == null) {
+            log.info("нет соединения");
         }
 
         try {
-            if ( connection.isClosed()) {
-                System.err.println("Соединение с базой закрыто.");
-                return;//
+            if (connection.isClosed()) {
+                log.info("Соединение с базой закрыто.");
+                return;
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -35,12 +32,11 @@ public class UserDaoJDBCImpl implements UserDao {
                         "name VARCHAR(50)," +
                         "lastName VARCHAR(50)," +
                         "age TINYINT)";
-        try (Connection connection = Util.getConnection();
-             Statement statement = connection.prepareStatement(createTableSql)) {
+        try (Statement statement = connection.prepareStatement(createTableSql)) {
             statement.execute(createTableSql);
-            System.out.println("Таблица пользователей создана.");
+            log.info("Таблица пользователей создана.");
         } catch (SQLException e) {
-            System.err.println("Ошибка при создании таблицы: " + e.getMessage());
+            log.severe("Ошибка при создании таблицы: " + e.getMessage());
         }
 
     }
@@ -50,20 +46,23 @@ public class UserDaoJDBCImpl implements UserDao {
         String dropTableSql = "DROP TABLE IF EXISTS users";
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(dropTableSql);
-            System.out.println("Таблица пользователей удалена.");
+            log.info("Таблица пользователей удалена.");
         } catch (SQLException e) {
-            System.err.println("Ошибка при удалении таблицы: " + e.getMessage());
+            log.severe("Ошибка при удалении таблицы: " + e.getMessage());
         }
     }
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
-        String saveUserSql = "INSERT INTO users (name, lastName, age) VALUES ('" + name + "', '" + lastName + "', " + age + ")";
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate(saveUserSql);
-            System.out.println("User с именем – " + name + " добавлен в базу данных.");
+        String sql = "INSERT INTO users (name, lastName, age) VALUES(?, ?, ?)";
+        try (PreparedStatement preparedStatement = Util.getConnection().prepareStatement(sql)) {
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setByte(3, age);
+            preparedStatement.executeUpdate();
+            log.info("Пользователь с именем '{}' добавлен в базу данных.");
         } catch (SQLException e) {
-            System.err.println("Ошибка при добавлении пользователя: " + e.getMessage());
+            log.severe("Ошибка при добавлении пользователя: {}");
         }
     }
 
@@ -72,9 +71,9 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "DELETE FROM users WHERE id = " + id;
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
-            System.out.println("Пользователь с id " + id + " удалён.");
+            log.info("Пользователь с id " + id + " удалён.");
         } catch (SQLException e) {
-            System.err.println("Ошибка при удалении пользователя: " + e.getMessage());
+            log.severe("Ошибка при удалении пользователя: " + e.getMessage());
         }
     }
 
@@ -91,11 +90,10 @@ public class UserDaoJDBCImpl implements UserDao {
                 user.setLastName(resultSet.getString("lastName"));
                 user.setAge(resultSet.getByte("age"));
                 users.add(user);
-
             }
         } catch (
                 SQLException e) {
-            System.err.println("Ошибка при получении списка пользователей: " + e.getMessage());
+            log.severe("Ошибка при получении списка пользователей: " + e.getMessage());
         }
         return users;
     }
@@ -105,9 +103,9 @@ public class UserDaoJDBCImpl implements UserDao {
         String clean = "TRUNCATE TABLE users";
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(clean);
-            System.out.println("Таблица пользователей очищена.");
+            log.info("Таблица пользователей очищена.");
         } catch (SQLException e) {
-            System.err.println("Ошибка при очистке таблицы: " + e.getMessage());
+            log.severe("Ошибка при очистке таблицы: " + e.getMessage());
         }
     }
 }
