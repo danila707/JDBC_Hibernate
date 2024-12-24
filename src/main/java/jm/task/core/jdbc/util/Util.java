@@ -1,25 +1,43 @@
 package jm.task.core.jdbc.util;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.logging.Logger;
+import jm.task.core.jdbc.model.User;
+import org.hibernate.HibernateException;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+import java.util.Properties;
 
 public class Util {
-    private static final Logger log = Logger.getLogger(Util.class.getName());
+    private SessionFactory sessionFactory = buildSessionFactory();
 
-    private static final String URL = "jdbc:mysql://localhost:3306/users_db?useSSL=false&autoReconnect=true";
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "root";
-
-    public static Connection getConnection() {
-        Connection connection = null;
+    SessionFactory buildSessionFactory() {
         try {
-            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-            log.info("Соединение с базой данных установлено!");
-        } catch (SQLException e) {
-            log.severe("Соединение с базой данных не установлено!");
+            sessionFactory = new Configuration()
+                    .addProperties(getProperties())
+                    .addAnnotatedClass(User.class)
+                    .buildSessionFactory();
+
+        } catch (HibernateException e) {
+            System.err.println("Initial SessionFactory creation failed." + e);
+            throw new RuntimeException(e);
         }
-        return connection;
+        return sessionFactory;
+
+    }
+
+    private static Properties getProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+        properties.setProperty("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver");
+        properties.setProperty("hibernate.connection.url", "jdbc:mysql://localhost:3306/users_db");
+        properties.setProperty("hibernate.connection.username", "root");
+        properties.setProperty("hibernate.connection.password", "root");
+        properties.setProperty("hibernate.show_sql", "true");
+        properties.setProperty("hibernate.hbm2ddl.auto", "update");
+        return properties;
+    }
+
+    public SessionFactory getSessionFactory() {
+        return sessionFactory;
     }
 }
