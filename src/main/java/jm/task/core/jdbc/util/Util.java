@@ -18,7 +18,6 @@ public class Util {
                     .buildSessionFactory();
 
         } catch (HibernateException e) {
-            System.err.println("Initial SessionFactory creation failed." + e);
             throw new RuntimeException(e);
         }
         return sessionFactory;
