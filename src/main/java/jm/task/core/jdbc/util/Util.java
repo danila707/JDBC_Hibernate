@@ -8,20 +8,24 @@ import org.hibernate.cfg.Configuration;
 import java.util.Properties;
 
 public class Util {
-    private SessionFactory sessionFactory = buildSessionFactory();
+    private static SessionFactory sessionFactory;
 
-    SessionFactory buildSessionFactory() {
-        try {
-            sessionFactory = new Configuration()
-                    .addProperties(getProperties())
-                    .addAnnotatedClass(User.class)
-                    .buildSessionFactory();
+    private Util() {
 
-        } catch (HibernateException e) {
-            throw new RuntimeException(e);
+    }
+
+    public static SessionFactory getSessionFactory() {
+        if (sessionFactory == null) {
+            try {
+                sessionFactory = new Configuration()
+                        .addProperties(getProperties())
+                        .addAnnotatedClass(User.class)
+                        .buildSessionFactory();
+            } catch (HibernateException e) {
+                throw new RuntimeException("Ошибка при создании SessionFactory", e);
+            }
         }
         return sessionFactory;
-
     }
 
     private static Properties getProperties() {
@@ -34,9 +38,5 @@ public class Util {
         properties.setProperty("hibernate.show_sql", "true");
         properties.setProperty("hibernate.hbm2ddl.auto", "update");
         return properties;
-    }
-
-    public SessionFactory getSessionFactory() {
-        return sessionFactory;
     }
 }
